@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edytor obrazów</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #f0f0f0;
+    }
+    #canvasContainer {
+      margin: 20px auto;
+      width: 600px;
+      height: 400px;
+      background: white;
+      border: 1px solid #ccc;
+      position: relative;
+      user-select: none;
+    }
+    canvas {
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+      margin: 0 auto;
+    }
+    .controls {
+      margin-top: 15px;
+    }
+    .controls button, .controls input[type=range] {
+      margin: 5px;
+    }
+    #cropRect {
+      position: absolute;
+      border: 2px dashed red;
+      display: none;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Edytor obrazów</h1>
+  <div id="canvasContainer">
+    <canvas id="imageCanvas"></canvas>
+    <div id="cropRect"></div>
+  </div>
+
+  <div class="controls">
+    <button data-filter="grayscale">Grayscale</button>
+    <button data-filter="invert">Invert</button>
+    <button data-filter="sepia">Sepia</button>
+  </div>
+
+  <div class="controls">
+    <label>Brightness <input type="range" id="brightness" min="0" max="200" value="100"></label>
+    <label>Contrast <input type="range" id="contrast" min="0" max="200" value="100"></label>
+    <label>Hue <input type="range" id="hue" min="0" max="360" value="0"></label>
+  </div>
+
+  <div class="controls">
+    <button id="cropBtn">Crop</button>
+    <button id="saveBtn">Save</button>
+    <button id="back-btn" onclick="window.location.href='/filemanager'">Back</button>
+  </div>
+
+  <script src="/js/image-editor.js"></script>
+</body>
+</html>
