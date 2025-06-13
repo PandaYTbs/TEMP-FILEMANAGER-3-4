@@ -1,0 +1,293 @@
+<div id="header">
+    <h1>File Manager</h1>
+</div>
+
+<div id="fake_body">
+    <div id="lewo">
+        <button id="new_folder" onclick="showDialog('folderDialog')">New Folder</button>
+        {{#if currentPath}}
+            <button id="rename_current" onclick="showRenameCurrentDialog()">Rename Current Folder</button>
+        {{/if}}
+        <button id="new_file" onclick="showFileDialog()">New File</button>
+
+        
+        <div id="biale_lewo">
+            <form class="upload-form" action="/upload?root={{currentPath}}" method="post" enctype="multipart/form-data">
+                <label id="select_files" for="file-upload">Select files to upload</label>
+                <input id="file-upload" type="file" name="file" style="display: none;" 
+                    onchange="updateUploadButton(this.files)">
+                <button id="upload" type="submit">Upload</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="prawo">
+<div id="breadcrumbs">
+    <a href="/filemanager">Home</a>
+    {{#each breadcrumbs}}
+        &gt; <a href="/filemanager?root={{this.path}}">{{this.name}}</a>
+    {{/each}}
+</div>
+
+        {{#if hasParent}}
+        <div class="item-box folder-item">
+            <a href="/filemanager?root={{parentPath}}">
+                <span class="item-name">[..]</span>
+            </a>
+        </div>
+        {{/if}}
+
+<div id="folders-section">
+    <h3>Folders</h3>
+    <div class="items-container">
+        {{#each folders}}
+        <div class="item-box folder-item">
+            <a href="/filemanager?root={{this.path}}" class="folder-link">
+                <span class="item-name">[{{this.name}}]</span>
+            </a>
+            <div class="item-actions">
+                <button onclick="downloadFolder('{{this.name}}', event)">Download ZIP</button>
+                <button onclick="deleteItem('{{this.name}}', event)">Delete</button>
+            </div>
+        </div>
+        {{else}}
+        <p>No folders</p>
+        {{/each}}
+    </div>
+</div>
+
+       <div id="files-section">
+    <h3>Files</h3>
+    <div class="items-container">
+        {{#each files}}
+<!-- W sekcji plików zmień na: -->
+<div class="item-box file-item">
+    <span class="item-name">{{this.name}}</span>
+    <div class="item-actions">
+        <button onclick="downloadFile('{{this.name}}')">Download</button>
+        <button onclick="editFile('{{this.path}}', '{{this.name}}')">Edit</button>
+        <button onclick="deleteItem('{{this.name}}', event)">Delete</button>
+    </div>
+</div>
+        {{else}}
+        <p>No files</p>
+        {{/each}}
+    </div>
+</div>
+</div>
+
+<!-- Dialog boxes -->
+<dialog id="folderDialog">
+    <form method="dialog">
+        <h3>New folder name:</h3>
+        <input type="hidden" name="root" value="{{currentPath}}">
+        <input type="text" name="folder" required>
+        <div class="dialog-buttons">
+            <button type="submit" formmethod="post" formaction="/create-folder">Create</button>
+            <button type="button" onclick="closeDialog('folderDialog')">Cancel</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="fileDialog">
+    <form method="dialog">
+        <h3>Create New File</h3>
+        <input type="hidden" name="root" value="{{currentPath}}">
+        
+        <div class="form-group">
+            <label for="filename">File name:</label>
+            <input type="text" id="filename" name="filename" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="fileType">File type:</label>
+            <select id="fileType" name="fileType" required>
+                <option value=".txt">Text File (.txt)</option>
+                <option value=".js">JavaScript (.js)</option>
+                <option value=".css">CSS (.css)</option>
+                <option value=".html">HTML (.html)</option>
+                <option value=".json">JSON (.json)</option>
+            </select>
+        </div>
+        
+        <div class="dialog-buttons">
+            <button type="submit" formmethod="post" formaction="/create-file">Create</button>
+            <button type="button" onclick="closeDialog('fileDialog')">Cancel</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="renameCurrentDialog">
+    <form action="/rename-current" method="post">
+        <h3>Rename Current Folder</h3>
+        <input type="hidden" name="currentPath" value="{{currentPath}}">
+        <input type="hidden" name="oldName" value="{{currentDirName}}">
+        <input type="text" name="newName" value="{{currentDirName}}" required>
+        <div class="dialog-buttons">
+            <button type="submit">Rename</button>
+            <button type="button" onclick="closeDialog('renameCurrentDialog')">Cancel</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="fileTypeDialog">
+    <form method="dialog">
+        <h3>Select file type:</h3>
+        <input type="hidden" name="root" value="{{currentPath}}">
+        <select name="fileType" required>
+            <option value=".css">CSS</option>
+            <option value=".js">JavaScript</option>
+            <option value=".json">JSON</option>
+            <option value=".html">HTML</option>
+        </select>
+        <h3>File name (without extension):</h3>
+        <input type="text" name="filename" required>
+        <div class="dialog-buttons">
+            <button type="submit" formmethod="post" formaction="/create-file">Create</button>
+            <button type="button" onclick="closeDialog('fileTypeDialog')">Cancel</button>
+        </div>
+    </form>
+</dialog>
+
+<script>
+    function showDialog(id) {
+        const dialog = document.getElementById(id);
+        const input = dialog.querySelector('input[type="text"]');
+        dialog.showModal();
+        input.focus();
+    }
+    
+    function closeDialog(id) {
+        document.getElementById(id).close();
+    }
+
+    function updateUploadButton(files) {
+        const uploadBtn = document.getElementById('upload');
+        if (files.length > 0) {
+            uploadBtn.textContent = `Upload ${files.length} file(s)`;
+            uploadBtn.style.backgroundColor = '#0000ff';
+            uploadBtn.style.color = 'white';
+            uploadBtn.style.border = 'none';
+        } else {
+            uploadBtn.textContent = 'Upload';
+            uploadBtn.style.backgroundColor = '#d0cece';
+            uploadBtn.style.color = '#808080';
+            uploadBtn.style.border = '2px solid #808080';
+        }
+    }
+
+    function showRenameCurrentDialog() {
+        const dialog = document.getElementById('renameCurrentDialog');
+        const newNameInput = dialog.querySelector('input[name="newName"]');
+        dialog.showModal();
+        newNameInput.focus();
+        newNameInput.select();
+    }
+
+    function downloadFolder(name, event) {
+        event.stopPropagation();
+        window.location.href = `/download-zip?root={{currentPath}}&name=${encodeURIComponent(name)}`;
+    }
+
+    function deleteItem(name, event) {
+    event.stopPropagation();
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+        window.location.href = `/delete?root={{currentPath}}&name=${encodeURIComponent(name)}`;
+    }
+}
+    function downloadFile(name) {
+        window.location.href = `/download?root={{currentPath}}&name=${encodeURIComponent(name)}`;
+    }
+
+
+function setupDragDrop() {
+    const foldersSection = document.querySelector('#folders-section .items-container');
+    const filesSection = document.querySelector('#files-section .items-container');
+    
+    [foldersSection, filesSection].forEach(section => {
+        section.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.style.backgroundColor = 'rgba(0, 0, 255, 0.2)';
+        });
+        
+        section.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.style.backgroundColor = '';
+        });
+        
+        section.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.style.backgroundColor = '';
+            
+            const files = e.dataTransfer.files;
+            if (files.length === 0) return;
+            
+            const fd = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                fd.append('file', files[i]);
+            }
+            
+            fetch(`/upload?root={{currentPath}}`, {
+                method: 'POST',
+                body: fd
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Error uploading files');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error uploading files');
+            });
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', setupDragDrop);
+
+function showCreateFileDialog() {
+    const dialog = document.getElementById('fileTypeDialog');
+    const input = dialog.querySelector('input[type="text"]');
+    dialog.showModal();
+    input.focus();
+}
+
+function editFile(filePath, fileName) {
+    const ext = fileName.split('.').pop().toLowerCase();
+    const imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'];
+
+    if (imageTypes.includes(ext)) {
+        // Dodaj /files/ jeśli nie ma w ścieżce
+        if (!filePath.startsWith('/files/')) {
+            filePath = '/files/' + filePath;
+        }
+        window.location.href = `/image-editor?file=${encodeURIComponent(filePath)}`;
+    } else {
+        window.location.href = `/edit-file?path=${encodeURIComponent(filePath)}`;
+    }
+}
+
+
+function showFileDialog() {
+    const dialog = document.getElementById('fileDialog');
+    const filenameInput = dialog.querySelector('#filename');
+    dialog.showModal();
+    filenameInput.focus();
+    
+    // Automatycznie wybierz tekst jeśli jest .txt
+    const fileTypeSelect = dialog.querySelector('#fileType');
+    fileTypeSelect.addEventListener('change', function() {
+        const currentName = filenameInput.value;
+        const currentExt = path.extname(currentName);
+        if (currentExt) {
+            filenameInput.value = currentName.replace(currentExt, this.value);
+        }
+    });
+}
+</script>
